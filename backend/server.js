@@ -4,36 +4,29 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
-const { Room, Booking } = require('./models/Schemas');
-
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// MongoDB Bağlantısı (Hata kontrolü eklendi)
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(err));
+  .then(() => console.log("✅ MongoDB Bağlantısı Başarılı"))
+  .catch(err => console.error("❌ MongoDB Hatası:", err));
 
-// API: Odaları Getir
-app.get('/api/rooms', async (req, res) => {
-  const rooms = await Room.find();
-  res.json(rooms);
+// Örnek API Endpoint
+app.get('/api/status', (req, res) => {
+  res.json({ message: "Sistem Aktif" });
 });
 
-// API: Rezervasyon Oluştur
-app.post('/api/bookings', async (req, res) => {
-  const newBooking = new Booking(req.body);
-  await newBooking.save();
-  res.json(newBooking);
-});
+// --- RENDER DEPLOYMENT AYARI ---
+// Frontend 'dist' klasörünü statik olarak sun
+const __frontendPath = path.join(__dirname, '../frontend/dist');
+app.use(express.static(__frontendPath));
 
-// Render için Frontend'i statik olarak sunma (Build sonrası)
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'));
-  });
-}
+// API dışındaki tüm istekleri React'e (index.html) yönlendir
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__frontendPath, 'index.html'));
+});
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server ${PORT} portunda çalışıyor`));
